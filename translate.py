@@ -11,7 +11,7 @@ import torch.nn as nn
 from pathlib import Path
 from tokenizers import Tokenizer
 
-# ── Paths ──────────────────────────────────────────────────────────────────
+# Paths
 BASE         = Path(r"C:\Users\ashik\Desktop\Photogrammetry\project\AITranslation")
 TOK_DIR      = BASE / "tokenizers"
 MODEL_PATH   = BASE / "model_en_bajuni" / "best_model.pt"
@@ -22,7 +22,7 @@ MAX_LEN = 64
 device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# ── Tokenizer ──────────────────────────────────────────────────────────────
+# Tokenizer
 class Tokenizers:
     def __init__(self):
         self.src = Tokenizer.from_file(str(SRC_TOK_PATH))
@@ -48,7 +48,7 @@ class Tokenizers:
         return self.tgt.decode([i for i in ids if i not in skip])
 
 
-# ── Model (must match train_model.py exactly) ──────────────────────────────
+# Model (must match train_model.py exactly)
 class TranslatorModel(nn.Module):
     def __init__(self, src_vsz, tgt_vsz, d_model=256, nhead=4,
                  num_enc=4, num_dec=4, ffn=512, dropout=0.2, max_len=MAX_LEN):
@@ -77,7 +77,7 @@ class TranslatorModel(nn.Module):
         return self.proj(out)
 
 
-# ── Beam search (better than greedy for final output) ─────────────────────
+# Beam search (better than greedy for final output)
 def beam_decode(model, src_ids, src_mask, tok: Tokenizers,
                 beam_size=4, max_len=MAX_LEN, length_penalty=0.6):
     model.eval()
@@ -115,7 +115,7 @@ def beam_decode(model, src_ids, src_mask, tok: Tokenizers,
         return completed[0][1][1:]  # strip BOS
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# Main
 def translate(sentences: list[str], tok: Tokenizers, model: TranslatorModel) -> list[str]:
     ids, mask = tok.encode_src(sentences)
     results   = []

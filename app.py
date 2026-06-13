@@ -1,7 +1,6 @@
 """
 Flask web server for the English → Kibajuni translator.
 Run: python app.py
-Then open: http://localhost:5000
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -11,7 +10,7 @@ from pathlib import Path
 from tokenizers import Tokenizer
 import os
 
-# ── Paths ──────────────────────────────────────────────────────────────────
+# Paths
 BASE         = Path(r"C:\Users\ashik\Desktop\Photogrammetry\project\AITranslation")
 TOK_DIR      = BASE / "tokenizers"
 MODEL_PATH   = BASE / "model_en_bajuni" / "best_model.pt"
@@ -20,7 +19,7 @@ TGT_TOK_PATH = TOK_DIR / "bajuni_tokenizer.json"
 MAX_LEN      = 64
 device       = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ── Tokenizer ──────────────────────────────────────────────────────────────
+# Tokenizer
 class Tokenizers:
     def __init__(self):
         self.src = Tokenizer.from_file(str(SRC_TOK_PATH))
@@ -45,7 +44,7 @@ class Tokenizers:
         skip = {self.tgt_pad, self.tgt_bos, self.tgt_eos}
         return self.tgt.decode([i for i in ids if i not in skip])
 
-# ── Model ──────────────────────────────────────────────────────────────────
+# Model
 class TranslatorModel(nn.Module):
     def __init__(self, src_vsz, tgt_vsz, d_model=256, nhead=4,
                  num_enc=4, num_dec=4, ffn=512, dropout=0.2, max_len=MAX_LEN):
@@ -73,7 +72,7 @@ class TranslatorModel(nn.Module):
         out  = self.decoder(x, memory, tgt_mask=caus, memory_key_padding_mask=mem_kpm)
         return self.proj(out)
 
-# ── Beam search ────────────────────────────────────────────────────────────
+# Beam search
 def beam_decode(model, src_ids, src_mask, tok, beam_size=4, max_len=MAX_LEN, lp=0.6):
     model.eval()
     with torch.no_grad():
@@ -99,7 +98,7 @@ def beam_decode(model, src_ids, src_mask, tok, beam_size=4, max_len=MAX_LEN, lp=
         completed.sort(key=lambda x: x[0] / (len(x[1]) ** lp), reverse=True)
         return completed[0][1][1:]
 
-# ── Load model once at startup ─────────────────────────────────────────────
+# Load model once at startup
 print(f"Loading model on {device}...")
 tok   = Tokenizers()
 model = TranslatorModel(tok.src_vsz, tok.tgt_vsz).to(device)
@@ -107,7 +106,7 @@ model.load_state_dict(torch.load(MODEL_PATH, map_location=device, weights_only=T
 model.eval()
 print("Model ready.")
 
-# ── Flask app ──────────────────────────────────────────────────────────────
+# Flask app
 app = Flask(__name__, static_folder=str(BASE / "web"), static_url_path="")
 
 @app.route("/")

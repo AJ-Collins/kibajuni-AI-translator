@@ -16,7 +16,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 import evaluate
 from tqdm import tqdm
 
-# ── Paths ──────────────────────────────────────────────────────────────────
+# Paths
 BASE         = Path(r"C:\Users\ashik\Desktop\Photogrammetry\project\AITranslation")
 CSV          = BASE / "corpus_clean.csv"
 TOK_DIR      = BASE / "tokenizers"
@@ -24,7 +24,7 @@ OUT_DIR      = BASE / "model_en_bajuni"
 SRC_TOK_PATH = TOK_DIR / "english_tokenizer.json"
 TGT_TOK_PATH = TOK_DIR / "bajuni_tokenizer.json"
 
-# ── Hyperparameters ────────────────────────────────────────────────────────
+# Hyperparameters
 MAX_LEN    = 64
 BATCH_SIZE = 32
 EPOCHS     = 80
@@ -42,7 +42,7 @@ if device.type == "cuda":
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Tokenizer ──────────────────────────────────────────────────────────────
+# Tokenizer
 class Tokenizers:
     def __init__(self):
         self.src = Tokenizer.from_file(str(SRC_TOK_PATH))
@@ -80,7 +80,7 @@ class Tokenizers:
         ids  = [i for i in ids if i not in skip]
         return self.tgt.decode(ids)
 
-# ── Dataset ────────────────────────────────────────────────────────────────
+# Dataset
 class TranslationDataset(Dataset):
     def __init__(self, src_texts, tgt_texts, tok: Tokenizers):
         self.src = src_texts
@@ -110,7 +110,7 @@ class TranslationDataset(Dataset):
             "labels":    labels,
         }
 
-# ── Model ──────────────────────────────────────────────────────────────────
+# Model
 class TranslatorModel(nn.Module):
     def __init__(self, src_vsz, tgt_vsz, d_model=256, nhead=4,
                  num_enc=4, num_dec=4, ffn=512, dropout=0.2, max_len=MAX_LEN):
@@ -155,7 +155,7 @@ class TranslatorModel(nn.Module):
         mem, mem_kpm = self.encode(src_ids, src_mask)
         return self.decode_step(dec_input, mem, mem_kpm)
 
-# ── Greedy decode for BLEU ─────────────────────────────────────────────────
+# Greedy decode for BLEU
 def greedy_decode(model, src_ids, src_mask, tok: Tokenizers, max_len=MAX_LEN):
     model.eval()
     with torch.no_grad():
@@ -169,7 +169,7 @@ def greedy_decode(model, src_ids, src_mask, tok: Tokenizers, max_len=MAX_LEN):
                 break
     return dec[:, 1:]  # strip BOS
 
-# ── Training ───────────────────────────────────────────────────────────────
+# Training
 def run_epoch(model, loader, optimizer, scheduler, scaler, criterion, train=True):
     model.train() if train else model.eval()
     total_loss, total_tok = 0.0, 0
@@ -201,7 +201,7 @@ def run_epoch(model, loader, optimizer, scheduler, scaler, criterion, train=True
 
     return total_loss / max(total_tok, 1)
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# Main
 def main():
     df = pd.read_csv(CSV).dropna(subset=["english","bajuni"])
     df = df.sample(frac=1, random_state=SEED).reset_index(drop=True)
@@ -259,7 +259,7 @@ def main():
                 print(f"\nEarly stopping at epoch {epoch}. Best BLEU: {best_bleu:.2f}")
                 break
 
-    # ── Sample translations ───────────────────────────────────────────────
+    # Sample translations
     print(f"\n── Sample translations (best model, BLEU={best_bleu:.2f}) ──")
     model.load_state_dict(torch.load(OUT_DIR / "best_model.pt", weights_only=True))
     model.eval()
@@ -273,7 +273,7 @@ def main():
         print(f"  REF : {ref}")
         print(f"  PRED: {pred}")
 
-    print(f"\n✅  Model saved → {OUT_DIR / 'best_model.pt'}")
+    print(f"\nModel saved → {OUT_DIR / 'best_model.pt'}")
 
 if __name__ == "__main__":
     main()
