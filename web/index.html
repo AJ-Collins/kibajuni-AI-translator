@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kibajuni Translator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          serif: ['Playfair Display', 'serif'],
+        },
+        colors: {
+          industry: {
+            50: '#eef2ff',
+            100: '#e0e7ff',
+            500: '#6366f1',
+            600: '#4f46e5', // Primary Industry Blue/Indigo
+            700: '#4338ca',
+          },
+          dark: '#0f172a', // Deep slate for text
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  /* Keep only the dynamic cursor and spinner animations in custom CSS */
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background-color: #4f46e5;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.9s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .spinner {
+    width: 16px; 
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+
+  .btn-loading .spinner { display: block; }
+  .btn-loading .btn-text { display: none; }
+
+  @keyframes spin { 
+    to { transform: rotate(360deg); } 
+  }
+  
+  /* Smooth scrollbar for output area */
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body class="bg-white text-dark font-sans antialiased min-h-screen flex flex-col items-center py-8 px-4 md:py-16 md:px-8 selection:bg-industry-100 selection:text-industry-700">
+
+  <header class="text-center w-full max-w-3xl mb-8 md:mb-12">
+    <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-dark">
+      Speak <em class="font-serif italic text-industry-600 pr-1">Kibajuni</em>
+    </h1>
+    <p class="text-sm md:text-base text-slate-500 font-light max-w-lg mx-auto leading-relaxed">
+      A custom AI translator for a Kenyan coast language — trained from scratch on community-sourced data.
+    </p>
+  </header>
+
+  <main class="w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+      
+      <div class="p-4 md:p-6 flex flex-col group focus-within:bg-slate-50/50 transition-colors duration-300">
+        <div class="flex items-center gap-3 mb-3 md:mb-4">
+          <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">English</span>
+        </div>
+        <textarea
+          id="src"
+          class="w-full h-32 md:h-48 resize-none bg-transparent outline-none text-base md:text-lg text-dark placeholder-slate-300 custom-scrollbar"
+          placeholder="Type an English sentence…"
+          spellcheck="false"
+          maxlength="400"
+        ></textarea>
+      </div>
+
+      <div class="p-4 md:p-6 flex flex-col bg-slate-50">
+        <div class="flex items-center gap-3 mb-3 md:mb-4">
+          <span class="text-xs font-bold tracking-wider text-industry-600 uppercase">Kibajuni</span>
+        </div>
+        <div 
+          id="output" 
+          class="w-full h-32 md:h-48 overflow-y-auto custom-scrollbar text-base md:text-lg text-slate-400 italic font-light flex items-start"
+        >
+          Translation will appear here
+        </div>
+      </div>
+    </div>
+
+    <div id="error" class="hidden px-4 py-3 bg-red-50 text-red-600 text-sm md:text-base border-t border-slate-200 font-medium text-center"></div>
+
+    <div class="px-4 py-3 md:px-6 md:py-4 border-t border-slate-200 flex items-center justify-between bg-white">
+      <span class="text-xs md:text-sm font-medium text-slate-400 min-w-[4rem]" id="chars">0 / 400</span>
+      
+      <div class="flex items-center gap-2 md:gap-4">
+        <button 
+          id="clearBtn" 
+          onclick="clearAll()"
+          class="px-3 py-1.5 text-xs md:text-sm font-medium text-slate-400 hover:text-dark hover:bg-slate-100 rounded-md transition-colors"
+        >
+          Clear
+        </button>
+        <button 
+          id="translateBtn" 
+          onclick="doTranslate()"
+          class="flex items-center gap-2 px-5 py-2.5 md:px-8 md:py-3 bg-industry-600 hover:bg-industry-700 active:bg-industry-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm md:text-base font-medium rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+        >
+          <div class="spinner"></div>
+          <span class="btn-text">Translate &rarr;</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <section class="w-full max-w-4xl mt-10 md:mt-12">
+    <h3 class="text-center text-xs font-bold tracking-widest text-slate-400 uppercase mb-4">Try an example</h3>
+    <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+      <button onclick="setExample(this)" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:border-industry-300 hover:text-industry-700 hover:bg-industry-50 transition-colors shadow-sm">The elder told stories at night.</button>
+      <button onclick="setExample(this)" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:border-industry-300 hover:text-industry-700 hover:bg-industry-50 transition-colors shadow-sm">Children play songs by the sea.</button>
+      <button onclick="setExample(this)" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:border-industry-300 hover:text-industry-700 hover:bg-industry-50 transition-colors shadow-sm">The fisherman did not go out when the sun was up.</button>
+      <button onclick="setExample(this)" class="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:border-industry-300 hover:text-industry-700 hover:bg-industry-50 transition-colors shadow-sm">She prepared the fish with herbs and salt.</button>
+    </div>
+  </section>
+
+  <footer class="mt-16 text-center text-xs text-slate-400 leading-relaxed">
+    Built with a custom BPE tokenizer + Seq2Seq Transformer · Kibajuni NLP Project<br>
+  </footer>
+
+<script>
+const srcEl  = document.getElementById('src');
+const outEl  = document.getElementById('output');
+const btnEl  = document.getElementById('translateBtn');
+const errEl  = document.getElementById('error');
+const charEl = document.getElementById('chars');
+
+// Tailwind classes for empty state vs filled state
+const emptyClasses = ['text-slate-400', 'italic', 'font-light'];
+const filledClasses = ['text-dark', 'font-serif', 'font-medium'];
+
+srcEl.addEventListener('input', () => {
+  charEl.textContent = `${srcEl.value.length} / 400`;
+});
+
+srcEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) doTranslate();
+});
+
+function setExample(btn) {
+  srcEl.value = btn.textContent;
+  charEl.textContent = `${srcEl.value.length} / 400`;
+  doTranslate();
+}
+
+function clearAll() {
+  srcEl.value = '';
+  charEl.textContent = '0 / 400';
+  
+  // Reset output classes
+  outEl.classList.remove(...filledClasses);
+  outEl.classList.add(...emptyClasses);
+  outEl.innerHTML = 'Translation will appear here';
+  
+  errEl.classList.add('hidden');
+}
+
+function setError(msg) {
+  errEl.textContent = msg;
+  errEl.classList.remove('hidden');
+}
+
+function clearError() {
+  errEl.classList.add('hidden');
+}
+
+function typewrite(text, el) {
+  // Switch styling to filled state
+  el.classList.remove(...emptyClasses);
+  el.classList.add(...filledClasses);
+  
+  el.innerHTML = '';
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  el.appendChild(cursor);
+
+  let i = 0;
+  const delay = Math.max(18, Math.min(45, 1200 / text.length));
+
+  function next() {
+    if (i < text.length) {
+      el.insertBefore(document.createTextNode(text[i]), cursor);
+      i++;
+      setTimeout(next, delay);
+    } else {
+      setTimeout(() => cursor.remove(), 1200);
+    }
+  }
+  next();
+}
+
+async function doTranslate() {
+  const text = srcEl.value.trim();
+  if (!text) return;
+
+  clearError();
+  btnEl.classList.add('btn-loading');
+  btnEl.disabled = true;
+  
+  outEl.classList.remove(...filledClasses);
+  outEl.classList.add(...emptyClasses);
+  outEl.innerHTML = '<span class="animate-pulse">Translating…</span>';
+
+  try {
+    const res  = await fetch('/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      setError(data.error || 'Translation failed. Is the server running?');
+      outEl.innerHTML = 'Translation will appear here';
+    } else {
+      typewrite(data.translation, outEl);
+    }
+  } catch (e) {
+    setError('Could not reach the server. Make sure app.py is running.');
+    outEl.innerHTML = 'Translation will appear here';
+  } finally {
+    btnEl.classList.remove('btn-loading');
+    btnEl.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
