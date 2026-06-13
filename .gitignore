@@ -21,7 +21,6 @@ tokenizers/
 
 # Data files (may contain sensitive community language data)
 corpus_clean.csv
-Elicitation_Prompts_EN_SW_PK_BAJU
 
 # Raw data — commit only if you have permission to share publicly
 # Elicitation_Prompts_EN_SW_PK_BAJU*.xlsx
@@ -50,3 +49,7 @@ instance/
 dist/
 build/
 .eggs/
+# Raw data
+*.xlsx
+
+*.csv
