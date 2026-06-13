@@ -248,7 +248,7 @@ async function doTranslate() {
       typewrite(data.translation, outEl);
     }
   } catch (e) {
-    setError('Could not reach the server. Make sure app.py is running.');
+    setError('Could not reach the server. Try again');
     outEl.innerHTML = 'Translation will appear here';
   } finally {
     btnEl.classList.remove('btn-loading');
